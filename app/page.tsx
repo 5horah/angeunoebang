@@ -158,7 +158,7 @@ export default function CheckInPage() {
         </div>
 
         <div className="mt-8 text-center">
-          
+          <a
             href="/stats"
             className="text-yellow-600 hover:text-yellow-700 font-medium underline"
           >
