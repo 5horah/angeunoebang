@@ -19,7 +19,12 @@ export default function CheckInPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [todayStatus, setTodayStatus] = useState<TodayStatus>({});
   const [loading, setLoading] = useState(false);
-  const [clickedMember, setClickedMember] = useState<string | null>(null);
+  
+  // 확인 모달 상태
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  
   const today = format(new Date(), 'yyyy-MM-dd');
 
   useEffect(() => {
@@ -51,40 +56,83 @@ export default function CheckInPage() {
     }
   };
 
-  const handleCheckIn = async (memberName: string) => {
-    if (todayStatus[memberName]) return;
+  // 버튼 클릭 → 모달 열기
+  const handleButtonClick = (member: Member) => {
+    if (todayStatus[member.name]) return;
+    
+    setSelectedMember(member);
+    setShowConfirmModal(true);
+    setIsConfirmed(false);
+  };
+
+  // 모달에서 "인증하기" 클릭
+  const handleConfirmCheckIn = async () => {
+    if (!selectedMember || !isConfirmed) {
+      alert('체크박스를 선택해주세요!');
+      return;
+    }
     
     setLoading(true);
-    setClickedMember(memberName);
     
     try {
       const { error } = await supabase
         .from('attendance')
         .insert({
-          member_name: memberName,
+          member_name: selectedMember.name,
           check_in_date: today,
         });
       
       if (error) {
         if (error.code === '23505') {
-          alert(`${memberName}님은 오늘 이미 인증하셨습니다! ✅`);
+          alert(`${selectedMember.name}님은 오늘 이미 인증하셨습니다!`);
         } else {
           throw error;
         }
       } else {
-        setTodayStatus(prev => ({ ...prev, [memberName]: true }));
+        setTodayStatus(prev => ({ ...prev, [selectedMember.name]: true }));
         
-        // 성공 애니메이션
+        // 성공 모달로 전환
         setTimeout(() => {
-          setClickedMember(null);
+          setShowConfirmModal(false);
+          setSelectedMember(null);
+          setIsConfirmed(false);
         }, 1000);
       }
     } catch (err) {
       console.error(err);
       alert('오류가 발생했습니다.');
-      setClickedMember(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 취소 (시간 제한 없음)
+  const handleUndo = async (memberName: string) => {
+    const confirmed = window.confirm(
+      `${memberName}님의 오늘 인증을 취소하시겠습니까?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from('attendance')
+        .delete()
+        .eq('member_name', memberName)
+        .eq('check_in_date', today);
+
+      if (error) throw error;
+
+      setTodayStatus(prev => {
+        const newStatus = { ...prev };
+        delete newStatus[memberName];
+        return newStatus;
+      });
+
+      alert(`${memberName}님의 인증이 취소되었습니다.`);
+    } catch (err) {
+      console.error(err);
+      alert('취소 중 오류가 발생했습니다.');
     }
   };
 
@@ -93,6 +141,69 @@ export default function CheckInPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+      {/* 확인 모달 */}
+      {showConfirmModal && selectedMember && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 animate-scale-in">
+            {/* 이모지 */}
+            <div className="text-center mb-6">
+              <span className="text-7xl">{selectedMember.emoji}</span>
+              <h2 className="text-2xl font-bold text-gray-800 mt-4">
+                {selectedMember.name}님
+              </h2>
+            </div>
+
+            {/* 체크박스 */}
+            <div className="mb-6">
+              <label className="flex items-start gap-4 p-4 bg-amber-50 rounded-2xl cursor-pointer hover:bg-amber-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={isConfirmed}
+                  onChange={(e) => setIsConfirmed(e.target.checked)}
+                  className="mt-1 w-6 h-6 rounded border-2 border-amber-400 text-amber-600 focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-gray-800 mb-1">
+                    ✍️ 오늘 필사를 완료했습니다
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    체크하시면 출석이 기록됩니다
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* 버튼 */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setSelectedMember(null);
+                  setIsConfirmed(false);
+                }}
+                disabled={loading}
+                className="flex-1 px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleConfirmCheckIn}
+                disabled={!isConfirmed || loading}
+                className={`
+                  flex-1 px-6 py-4 font-bold rounded-xl transition-all
+                  ${isConfirmed && !loading
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }
+                `}
+              >
+                {loading ? '처리중...' : '인증하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 헤더 */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-amber-100 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -111,7 +222,6 @@ export default function CheckInPage() {
             </div>
           </div>
           
-          {/* 프로그레스 바 */}
           <div className="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
             <div 
               className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-1000 ease-out"
@@ -123,7 +233,6 @@ export default function CheckInPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         
-        {/* 안내 메시지 */}
         <div className="mb-8 p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-amber-200">
           <p className="text-center text-gray-700">
             ✍️ 오늘 필사를 완료하셨나요? <br className="md:hidden" />
@@ -135,62 +244,40 @@ export default function CheckInPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
           {members.map(member => {
             const isCheckedIn = todayStatus[member.name];
-            const isAnimating = clickedMember === member.name;
             
             return (
               <button
                 key={member.id}
-                onClick={() => handleCheckIn(member.name)}
-                disabled={loading || isCheckedIn}
+                onClick={() => handleButtonClick(member)}
+                disabled={isCheckedIn}
                 className={`
                   group relative overflow-hidden
                   p-6 rounded-3xl font-bold text-lg
                   transition-all duration-300 ease-out
                   ${isCheckedIn
-                    ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white shadow-lg shadow-green-200'
-                    : 'bg-white hover:bg-gradient-to-br hover:from-amber-400 hover:to-orange-400 text-gray-800 hover:text-white shadow-md hover:shadow-xl hover:shadow-amber-200'
+                    ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white shadow-lg shadow-green-200 cursor-default'
+                    : 'bg-white hover:bg-gradient-to-br hover:from-amber-400 hover:to-orange-400 text-gray-800 hover:text-white shadow-md hover:shadow-xl hover:shadow-amber-200 cursor-pointer active:scale-95 hover:scale-105'
                   }
-                  ${isAnimating ? 'scale-110 rotate-3' : 'scale-100 hover:scale-105'}
-                  ${loading && !isCheckedIn ? 'opacity-50 cursor-wait' : ''}
-                  ${isCheckedIn ? 'cursor-default' : 'cursor-pointer active:scale-95'}
                 `}
               >
-                {/* 배경 그라데이션 효과 */}
                 <div className={`
                   absolute inset-0 bg-gradient-to-br from-amber-300/20 to-orange-300/20
                   opacity-0 group-hover:opacity-100 transition-opacity duration-300
                   ${isCheckedIn ? 'hidden' : ''}
                 `} />
                 
-                {/* 체크 완료 배지 */}
                 {isCheckedIn && (
-                  <div className="absolute -top-2 -right-2 bg-white rounded-full p-2 shadow-lg animate-bounce">
+                  <div className="absolute -top-2 -right-2 bg-white rounded-full p-2 shadow-lg">
                     <span className="text-2xl">✅</span>
                   </div>
                 )}
                 
-                {/* 컨텐츠 */}
                 <div className="relative z-10 flex flex-col items-center gap-3">
                   <span className="text-5xl transform group-hover:scale-110 transition-transform duration-300">
                     {member.emoji}
                   </span>
                   <span className="text-xl">{member.name}</span>
-                  
-                  {isCheckedIn && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-4 py-2">
-                        <span className="text-sm font-semibold text-green-600">
-                          인증 완료! 🎉
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
-
-                {/* Ripple 효과 */}
-                {isAnimating && (
-                  <span className="absolute inset-0 animate-ping bg-amber-400 opacity-75 rounded-3xl" />
-                )}
               </button>
             );
           })}
@@ -242,7 +329,12 @@ export default function CheckInPage() {
                         <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-bold">
                           완료
                         </span>
-                        <span className="text-xl">🎉</span>
+                        <button
+                          onClick={() => handleUndo(member.name)}
+                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-full transition-colors"
+                        >
+                          취소
+                        </button>
                       </>
                     ) : (
                       <span className="px-3 py-1 bg-gray-200 text-gray-500 rounded-full text-sm">
@@ -256,7 +348,6 @@ export default function CheckInPage() {
           </div>
         </div>
 
-        {/* 통계 링크 */}
         <div className="mt-8 text-center">
           
             <a href="/stats"
