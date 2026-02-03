@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,7 +20,6 @@ export default function CheckInPage() {
   const [loading, setLoading] = useState(false);
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  // 모임원 목록 불러오기
   useEffect(() => {
     loadMembers();
     loadTodayStatus();
@@ -64,18 +62,12 @@ export default function CheckInPage() {
       
       if (error) {
         if (error.code === '23505') {
-          // 중복 - 이미 체크인함
           alert(`${memberName}님은 오늘 이미 인증하셨습니다! ✅`);
         } else {
           throw error;
         }
       } else {
-        // 성공
         setTodayStatus(prev => ({ ...prev, [memberName]: true }));
-        
-        // 성공 애니메이션
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTQIGGS56ejAbSkGMIzT8shyJAUrhc/y2ow2Bxhl');
-        audio.play().catch(() => {});
         
         setTimeout(() => {
           alert(`✅ ${memberName}님 오늘 필사 인증 완료!\n내일도 화이팅! 💪`);
@@ -92,7 +84,6 @@ export default function CheckInPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50">
       <div className="max-w-2xl mx-auto px-4 py-12">
-        {/* 헤더 */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
             📚 필사 모임 출석부
@@ -105,7 +96,6 @@ export default function CheckInPage() {
           </p>
         </div>
 
-        {/* 체크인 버튼들 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           {members.map(member => {
             const isCheckedIn = todayStatus[member.name];
@@ -145,7 +135,6 @@ export default function CheckInPage() {
           })}
         </div>
 
-        {/* 오늘의 현황 */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4">
             📊 오늘의 인증 현황
@@ -168,7 +157,6 @@ export default function CheckInPage() {
           </div>
         </div>
 
-        {/* 주간 통계 링크 */}
         <div className="mt-8 text-center">
           
             href="/stats"
