@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -12,19 +12,31 @@ interface Member {
 }
 
 interface TodayStatus {
-  [key: string]: boolean;
+  [key: string]: {
+    checked: boolean;
+    imageUrl?: string;
+  };
 }
 
 export default function CheckInPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [todayStatus, setTodayStatus] = useState<TodayStatus>({});
   const [loading, setLoading] = useState(false);
-  
-  // 확인 모달 상태
+  const [showRules, setShowRules] = useState(false);
+
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  
+
+  // 이미지 관련 상태
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 이미지 확대 모달
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImage, setModalImage] = useState<string | null>(null);
+
   const today = format(new Date(), 'yyyy-MM-dd');
 
   useEffect(() => {
@@ -37,51 +49,105 @@ export default function CheckInPage() {
       .from('members')
       .select('*')
       .order('name');
-    
+
     if (data) setMembers(data);
   };
 
   const loadTodayStatus = async () => {
     const { data } = await supabase
       .from('attendance')
-      .select('member_name')
+      .select('member_name, image_url')
       .eq('check_in_date', today);
-    
+
     if (data) {
       const status: TodayStatus = {};
       data.forEach(record => {
-        status[record.member_name] = true;
+        status[record.member_name] = {
+          checked: true,
+          imageUrl: record.image_url
+        };
       });
       setTodayStatus(status);
     }
   };
 
-  // 버튼 클릭 → 모달 열기
   const handleButtonClick = (member: Member) => {
-    if (todayStatus[member.name]) return;
-    
+    if (todayStatus[member.name]?.checked) return;
+
     setSelectedMember(member);
     setShowConfirmModal(true);
-    setIsConfirmed(false);
+    setSelectedImage(null);
+    setImagePreview(null);
   };
 
-  // 모달에서 "인증하기" 클릭
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // 파일 크기 체크 (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하로 선택해주세요.');
+        return;
+      }
+
+      setSelectedImage(file);
+
+      // 미리보기 생성
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file: File, memberName: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
+    // Supabase Storage key는 영숫자, 하이픈, 언더스코어만 허용 (한글·공백 불가)
+    const safeName = memberName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `${today}_${safeName}_${Date.now()}.${fileExt}`;
+    const filePath = `attendance/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from('attendance-images')
+      .upload(filePath, file);
+
+    if (error) {
+      console.error('이미지 업로드 오류:', error);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from('attendance-images')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
   const handleConfirmCheckIn = async () => {
-    if (!selectedMember || !isConfirmed) {
-      alert('체크박스를 선택해주세요!');
+    if (!selectedMember || !selectedImage) {
+      alert('필사 인증 사진을 선택해주세요!');
       return;
     }
-    
+
     setLoading(true);
-    
+    setUploading(true);
+
     try {
+      let imageUrl: string | null = null;
+
+      // 이미지 업로드
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage, selectedMember.name);
+      }
+
       const { error } = await supabase
         .from('attendance')
         .insert({
           member_name: selectedMember.name,
           check_in_date: today,
+          image_url: imageUrl,
         });
-      
+
       if (error) {
         if (error.code === '23505') {
           alert(`${selectedMember.name}님은 오늘 이미 인증하셨습니다!`);
@@ -89,24 +155,28 @@ export default function CheckInPage() {
           throw error;
         }
       } else {
-        setTodayStatus(prev => ({ ...prev, [selectedMember.name]: true }));
-        
-        // 성공 모달로 전환
-        setTimeout(() => {
-          setShowConfirmModal(false);
-          setSelectedMember(null);
-          setIsConfirmed(false);
-        }, 1000);
+        setTodayStatus(prev => ({
+          ...prev,
+          [selectedMember.name]: {
+            checked: true,
+            imageUrl: imageUrl || undefined
+          }
+        }));
+
+        setShowConfirmModal(false);
+        setSelectedMember(null);
+        setSelectedImage(null);
+        setImagePreview(null);
       }
     } catch (err) {
       console.error(err);
       alert('오류가 발생했습니다.');
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
-  // 취소 (시간 제한 없음)
   const handleUndo = async (memberName: string) => {
     const confirmed = window.confirm(
       `${memberName}님의 오늘 인증을 취소하시겠습니까?`
@@ -136,147 +206,191 @@ export default function CheckInPage() {
     }
   };
 
-  const checkedInCount = Object.values(todayStatus).filter(Boolean).length;
+  const openImageModal = (imageUrl: string) => {
+    setModalImage(imageUrl);
+    setShowImageModal(true);
+  };
+
+  const checkedInCount = Object.values(todayStatus).filter(s => s.checked).length;
   const progress = members.length > 0 ? (checkedInCount / members.length) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
+    <div className="min-h-screen bg-white">
+      {/* 이미지 확대 모달 */}
+      {showImageModal && modalImage && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh]">
+            <img
+              src={modalImage}
+              alt="필사 인증"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#37352f] shadow-lg"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 확인 모달 */}
       {showConfirmModal && selectedMember && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 animate-scale-in">
-            {/* 이모지 */}
-            <div className="text-center mb-6">
-              <span className="text-7xl">{selectedMember.emoji}</span>
-              <h2 className="text-2xl font-bold text-gray-800 mt-4">
-                {selectedMember.name}님
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 animate-scale-in border border-[#e3e2de] max-h-[90vh] overflow-y-auto">
+            <div className="text-center mb-5">
+              <span className="text-5xl">{selectedMember.emoji}</span>
+              <h2 className="text-lg font-semibold text-[#37352f] mt-3">
+                {selectedMember.name}
               </h2>
             </div>
 
-            {/* 체크박스 */}
-            <div className="mb-6">
-              <label className="flex items-start gap-4 p-4 bg-amber-50 rounded-2xl cursor-pointer hover:bg-amber-100 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={isConfirmed}
-                  onChange={(e) => setIsConfirmed(e.target.checked)}
-                  className="mt-1 w-6 h-6 rounded border-2 border-amber-400 text-amber-600 focus:ring-2 focus:ring-amber-500 cursor-pointer"
-                />
-                <div className="flex-1">
-                  <p className="font-bold text-gray-800 mb-1">
-                    ✍️ 오늘 필사를 완료했습니다
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    체크하시면 출석이 기록됩니다
-                  </p>
+            {/* 이미지 업로드 영역 */}
+            <div className="mb-5">
+              <p className="text-sm font-medium text-[#37352f] mb-2">
+                필사 인증 사진 <span className="text-[#e03e3e]">*</span>
+              </p>
+
+              {imagePreview ? (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="미리보기"
+                    className="w-full h-48 object-cover rounded-md border border-[#e3e2de]"
+                  />
+                  <button
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setImagePreview(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                    }}
+                    className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-[#e03e3e] text-sm"
+                  >
+                    ✕
+                  </button>
                 </div>
-              </label>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-32 border-2 border-dashed border-[#e3e2de] rounded-md flex flex-col items-center justify-center gap-2 hover:bg-[#f7f6f3] transition-colors"
+                >
+                  <span className="text-2xl">📷</span>
+                  <span className="text-sm text-[#787774]">사진 선택하기</span>
+                </button>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
             </div>
 
             {/* 버튼 */}
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 onClick={() => {
                   setShowConfirmModal(false);
                   setSelectedMember(null);
-                  setIsConfirmed(false);
+                  setSelectedImage(null);
+                  setImagePreview(null);
                 }}
                 disabled={loading}
-                className="flex-1 px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+                className="flex-1 px-4 py-2 text-sm font-medium text-[#37352f] bg-white border border-[#e3e2de] rounded-md hover:bg-[#f7f6f3] transition-colors"
               >
                 취소
               </button>
               <button
                 onClick={handleConfirmCheckIn}
-                disabled={!isConfirmed || loading}
-                className={`
-                  flex-1 px-6 py-4 font-bold rounded-xl transition-all
-                  ${isConfirmed && !loading
-                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }
-                `}
+                disabled={!selectedImage || loading}
+                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  selectedImage && !loading
+                    ? 'bg-[#2eaadc] text-white hover:bg-[#2898c7]'
+                    : 'bg-[#e3e2de] text-[#a4a4a0] cursor-not-allowed'
+                }`}
               >
-                {loading ? '처리중...' : '인증하기'}
+                {uploading ? '업로드중...' : loading ? '처리중...' : '인증하기'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 헤더 */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-amber-100 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                📚 앙그뇌방
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {format(new Date(), 'PPP EEEE', { locale: ko })}
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-amber-600">{checkedInCount}/{members.length}</div>
-              <div className="text-xs text-gray-500">인증 완료</div>
+      {/* 헤더 (고정) - 블러(글래스) 효과 */}
+      <div className="border-b border-[#e3e2de] sticky top-0 z-10 bg-white/70 backdrop-blur-md">
+        <div className="max-w-3xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-3xl">📖</span>
+            <h1 className="text-2xl font-bold text-[#37352f]">앙그뇌방</h1>
+          </div>
+          <p className="text-xs text-[#787774]">
+            앙큼한 그녀들의 뇌가 섹시해지는 방법
+          </p>
+
+          {/* 오늘 날짜 & 진행률 */}
+          <div className="flex items-center justify-between mt-3 mb-2">
+            <p className="text-sm text-[#787774]">
+              {format(new Date(), 'M월 d일 EEEE', { locale: ko })}
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-[#37352f]">{checkedInCount}/{members.length}</span>
+              <span className="text-xs text-[#787774]">인증 완료</span>
             </div>
           </div>
-          
-          <div className="mt-4 bg-gray-200 rounded-full h-2 overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all duration-1000 ease-out"
+
+          <div className="bg-[#e3e2de] rounded-full h-1.5 overflow-hidden">
+            <div
+              className="h-full bg-[#2eaadc] transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        
-        <div className="mb-8 p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-amber-200">
-          <p className="text-center text-gray-700">
-            ✍️ 오늘 필사를 완료하셨나요? <br className="md:hidden" />
-            <span className="font-bold text-amber-600">본인 이름을 눌러주세요!</span>
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        {/* 안내 문구 */}
+        <div className="mb-6 p-4 bg-[#f1f1ef] rounded-md border-l-4 border-[#2eaadc]">
+          <p className="text-sm text-[#37352f]">
+            오늘 필사를 완료하셨나요? <span className="font-semibold">본인 이름을 눌러 인증하세요!</span>
           </p>
         </div>
 
         {/* 체크인 버튼들 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
           {members.map(member => {
-            const isCheckedIn = todayStatus[member.name];
-            
+            const status = todayStatus[member.name];
+            const isCheckedIn = status?.checked;
+
             return (
               <button
                 key={member.id}
                 onClick={() => handleButtonClick(member)}
                 disabled={isCheckedIn}
                 className={`
-                  group relative overflow-hidden
-                  p-6 rounded-3xl font-bold text-lg
-                  transition-all duration-300 ease-out
+                  relative p-4 rounded-md text-center transition-all
                   ${isCheckedIn
-                    ? 'bg-gradient-to-br from-green-400 to-emerald-500 text-white shadow-lg shadow-green-200 cursor-default'
-                    : 'bg-white hover:bg-gradient-to-br hover:from-amber-400 hover:to-orange-400 text-gray-800 hover:text-white shadow-md hover:shadow-xl hover:shadow-amber-200 cursor-pointer active:scale-95 hover:scale-105'
+                    ? 'bg-[#dbf4e7] border border-[#c3e9d3] cursor-default'
+                    : 'bg-white border border-[#e3e2de] hover:bg-[#f7f6f3] cursor-pointer'
                   }
                 `}
               >
-                <div className={`
-                  absolute inset-0 bg-gradient-to-br from-amber-300/20 to-orange-300/20
-                  opacity-0 group-hover:opacity-100 transition-opacity duration-300
-                  ${isCheckedIn ? 'hidden' : ''}
-                `} />
-                
                 {isCheckedIn && (
-                  <div className="absolute -top-2 -right-2 bg-white rounded-full p-2 shadow-lg">
-                    <span className="text-2xl">✅</span>
-                  </div>
+                  <div className="absolute top-1 right-1 text-[#0f7b4c] text-sm">✓</div>
                 )}
-                
-                <div className="relative z-10 flex flex-col items-center gap-3">
-                  <span className="text-5xl transform group-hover:scale-110 transition-transform duration-300">
-                    {member.emoji}
-                  </span>
-                  <span className="text-xl">{member.name}</span>
+                {status?.imageUrl && (
+                  <div className="absolute top-1 left-1 text-[#2eaadc] text-sm">📷</div>
+                )}
+                <div className="text-3xl mb-1">{member.emoji}</div>
+                <div className={`text-sm font-medium ${isCheckedIn ? 'text-[#0f7b4c]' : 'text-[#37352f]'}`}>
+                  {member.name}
                 </div>
               </button>
             );
@@ -284,60 +398,62 @@ export default function CheckInPage() {
         </div>
 
         {/* 오늘의 현황 */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-6 border border-amber-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">
-              📊 오늘의 현황
+        <div className="border border-[#e3e2de] rounded-md mb-6">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#e3e2de] bg-[#f7f6f3]">
+            <h2 className="text-sm font-semibold text-[#37352f]">
+              오늘의 현황
             </h2>
             <div className="flex gap-2">
-              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+              <span className="px-2 py-0.5 bg-[#dbf4e7] text-[#0f7b4c] rounded text-xs font-medium">
                 {checkedInCount}명 완료
               </span>
               {members.length - checkedInCount > 0 && (
-                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">
+                <span className="px-2 py-0.5 bg-[#e3e2de] text-[#787774] rounded text-xs font-medium">
                   {members.length - checkedInCount}명 대기
                 </span>
               )}
             </div>
           </div>
-          
-          <div className="space-y-3">
+
+          <div className="divide-y divide-[#e3e2de]">
             {members.map(member => {
-              const isCheckedIn = todayStatus[member.name];
-              
+              const status = todayStatus[member.name];
+              const isCheckedIn = status?.checked;
+
               return (
-                <div 
-                  key={member.id} 
-                  className={`
-                    flex items-center justify-between p-4 rounded-2xl
-                    transition-all duration-300
-                    ${isCheckedIn 
-                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200' 
-                      : 'bg-gray-50 border-2 border-transparent'
-                    }
-                  `}
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-[#f7f6f3] transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">{member.emoji}</span>
-                    <span className={`font-medium ${isCheckedIn ? 'text-green-700' : 'text-gray-700'}`}>
+                    <span className="text-xl">{member.emoji}</span>
+                    <span className={`text-sm ${isCheckedIn ? 'text-[#0f7b4c]' : 'text-[#37352f]'}`}>
                       {member.name}
                     </span>
+                    {status?.imageUrl && (
+                      <button
+                        onClick={() => openImageModal(status.imageUrl!)}
+                        className="text-xs text-[#2eaadc] hover:underline"
+                      >
+                        📷 사진보기
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     {isCheckedIn ? (
                       <>
-                        <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm font-bold">
+                        <span className="px-2 py-0.5 bg-[#dbf4e7] text-[#0f7b4c] rounded text-xs font-medium">
                           완료
                         </span>
                         <button
                           onClick={() => handleUndo(member.name)}
-                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-full transition-colors"
+                          className="px-2 py-0.5 text-[#e03e3e] hover:bg-[#fbe4e4] rounded text-xs transition-colors"
                         >
                           취소
                         </button>
                       </>
                     ) : (
-                      <span className="px-3 py-1 bg-gray-200 text-gray-500 rounded-full text-sm">
+                      <span className="px-2 py-0.5 bg-[#e3e2de] text-[#787774] rounded text-xs">
                         대기중
                       </span>
                     )}
@@ -348,12 +464,70 @@ export default function CheckInPage() {
           </div>
         </div>
 
-        <div className="mt-8 text-center">
-          
-            <a href="/stats"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+        {/* 필사모임 규칙 */}
+        <div className="border border-[#e3e2de] rounded-md mb-6">
+          <button
+            onClick={() => setShowRules(!showRules)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-[#f7f6f3] hover:bg-[#eeeeec] transition-colors"
           >
-            <span>📈</span>
+            <h2 className="text-sm font-semibold text-[#37352f]">
+              필사모임 규칙
+            </h2>
+            <span className="text-[#787774] text-sm">{showRules ? '▲' : '▼'}</span>
+          </button>
+
+          {showRules && (
+            <div className="px-4 py-4 space-y-4 text-sm">
+              {/* 출석 */}
+              <div>
+                <h3 className="font-semibold text-[#37352f] mb-1">출석</h3>
+                <p className="text-[#787774] pl-3">• &lt;월-금&gt; 필사 후 사진찍고 카톡방에 인증</p>
+              </div>
+
+              {/* 벌금 규정 */}
+              <div>
+                <h3 className="font-semibold text-[#37352f] mb-1">벌금 규정</h3>
+                <div className="text-[#787774] pl-3 space-y-0.5">
+                  <p>• 미인증 1회당 1,000원 벌금 부과</p>
+                  <p>• 벌금 통장 명의: 최초 벌금 발생자</p>
+                </div>
+              </div>
+
+              {/* 벌금 감면 */}
+              <div>
+                <h3 className="font-semibold text-[#37352f] mb-1">벌금 감면</h3>
+                <div className="text-[#787774] pl-3 space-y-0.5">
+                  <p>• 다음의 경우 사전 공지 시 벌금 감면</p>
+                  <p>• 여행, 질병, 업무 사유(야근 및 회식 포함) 등</p>
+                </div>
+              </div>
+
+              {/* 면제권 */}
+              <div>
+                <h3 className="font-semibold text-[#37352f] mb-1">면제권</h3>
+                <div className="text-[#787774] pl-3 space-y-0.5">
+                  <p>• 주 1회 슈퍼 면제권 사용가능</p>
+                  <p>• 면제권 사용 방법: 당일 자정(24시) 이전까지 &quot;면제권 사용&quot;을 손글씨로 작성하여 카톡방에 인증</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 명언 */}
+        <div className="mb-6 p-4 bg-white border-l-4 border-[#37352f] rounded-r-md">
+          <p className="text-sm font-semibold text-[#37352f] mb-1">
+            성공은 매일 반복한<br />작은 노력들의 합이다.
+          </p>
+          <p className="text-xs text-[#787774]">- 로버트 콜리어</p>
+        </div>
+
+        {/* 통계 링크 */}
+        <div className="text-center border-t border-[#e3e2de] pt-6">
+          <a
+            href="/stats"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#2eaadc] hover:bg-[#f7f6f3] rounded-md transition-colors"
+          >
             <span>이번 주 통계 보기</span>
             <span>→</span>
           </a>

@@ -1,6 +1,12 @@
 {
-    "crons": [{
+  "crons": [
+    {
       "path": "/api/weekly-report",
       "schedule": "0 0 * * 6"
-    }]
-  }
+    },
+    {
+      "path": "/api/cleanup-old-images",
+      "schedule": "0 3 1 * *"
+    }
+  ]
+}
