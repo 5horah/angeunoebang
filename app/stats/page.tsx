@@ -164,20 +164,19 @@ export default function StatsPage() {
             <span className="text-4xl">📖</span>
             <h1 className="text-3xl font-bold text-[#37352f]">앙그뇌방</h1>
           </div>
-          <p className="text-sm text-[#787774]">
+          <p className="text-sm font-bold text-[#787774]">
             이번 주 통계
+          </p>
+          {/* 기간 표시 */}
+          <p className="text-sm text-[#787774]">
+            {format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'M월 d일', { locale: ko })}
+            {' - '}
+            {format(subDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 2), 'M월 d일', { locale: ko })}
           </p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6">
-        {/* 기간 표시 */}
-        <p className="text-sm text-[#787774] mb-6">
-          {format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'M월 d일', { locale: ko })}
-          {' - '}
-          {format(subDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 2), 'M월 d일', { locale: ko })}
-        </p>
-
         {/* 통계 카드 */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="p-4 bg-[#f7f6f3] rounded-md">
