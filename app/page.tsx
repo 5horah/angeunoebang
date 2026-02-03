@@ -26,7 +26,7 @@ export default function CheckInPage() {
   }, []);
 
   const loadMembers = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('members')
       .select('*')
       .order('name');
@@ -35,7 +35,7 @@ export default function CheckInPage() {
   };
 
   const loadTodayStatus = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('attendance')
       .select('member_name')
       .eq('check_in_date', today);
@@ -53,7 +53,7 @@ export default function CheckInPage() {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('attendance')
         .insert({
           member_name: memberName,
@@ -62,20 +62,17 @@ export default function CheckInPage() {
       
       if (error) {
         if (error.code === '23505') {
-          alert(`${memberName}님은 오늘 이미 인증하셨습니다! ✅`);
+          alert(`${memberName}님은 오늘 이미 인증하셨습니다!`);
         } else {
           throw error;
         }
       } else {
         setTodayStatus(prev => ({ ...prev, [memberName]: true }));
-        
-        setTimeout(() => {
-          alert(`✅ ${memberName}님 오늘 필사 인증 완료!\n내일도 화이팅! 💪`);
-        }, 100);
+        alert(`${memberName}님 오늘 필사 인증 완료!`);
       }
     } catch (err) {
       console.error(err);
-      alert('오류가 발생했습니다. 다시 시도해주세요.');
+      alert('오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -86,17 +83,14 @@ export default function CheckInPage() {
       <div className="max-w-2xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            📚 필사 모임 출석부
+            필사 모임 출석부
           </h1>
           <p className="text-gray-600">
             {format(new Date(), 'yyyy년 MM월 dd일')}
           </p>
-          <p className="text-sm text-gray-500 mt-2">
-            오늘 필사를 완료하셨나요? 버튼을 눌러주세요!
-          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           {members.map(member => {
             const isCheckedIn = todayStatus[member.name];
             
@@ -105,31 +99,17 @@ export default function CheckInPage() {
                 key={member.id}
                 onClick={() => handleCheckIn(member.name)}
                 disabled={loading || isCheckedIn}
-                className={`
-                  relative p-6 rounded-2xl font-bold text-xl
-                  transition-all duration-300 transform
-                  ${isCheckedIn
-                    ? 'bg-green-100 text-green-700 cursor-not-allowed'
-                    : 'bg-yellow-400 text-gray-800 hover:bg-yellow-500 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
-                  }
-                  ${loading ? 'opacity-50 cursor-wait' : ''}
-                `}
+                className={`p-6 rounded-2xl font-bold text-xl transition-all ${
+                  isCheckedIn
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-yellow-400 text-gray-800 hover:bg-yellow-500'
+                } ${loading ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-3xl">{member.emoji}</span>
                   <span>{member.name}</span>
-                  {isCheckedIn && (
-                    <span className="text-2xl">✅</span>
-                  )}
+                  {isCheckedIn && <span className="text-2xl">✅</span>}
                 </div>
-                
-                {isCheckedIn && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-normal text-green-600">
-                      인증 완료!
-                    </span>
-                  </div>
-                )}
               </button>
             );
           })}
@@ -137,19 +117,17 @@ export default function CheckInPage() {
 
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4">
-            📊 오늘의 인증 현황
+            오늘의 인증 현황
           </h2>
           <div className="space-y-2">
             {members.map(member => (
-              <div key={member.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
-                <span className="text-gray-700">
-                  {member.emoji} {member.name}
-                </span>
+              <div key={member.id} className="flex items-center justify-between py-2">
+                <span>{member.emoji} {member.name}</span>
                 <span>
                   {todayStatus[member.name] ? (
-                    <span className="text-green-600 font-medium">✅ 완료</span>
+                    <span className="text-green-600">완료</span>
                   ) : (
-                    <span className="text-gray-400">⏳ 대기중</span>
+                    <span className="text-gray-400">대기중</span>
                   )}
                 </span>
               </div>
@@ -158,11 +136,8 @@ export default function CheckInPage() {
         </div>
 
         <div className="mt-8 text-center">
-          <a
-            href="/stats"
-            className="text-yellow-600 hover:text-yellow-700 font-medium underline"
-          >
-            📈 이번 주 통계 보기
+          <a href="/stats" className="text-yellow-600 hover:text-yellow-700 underline">
+            이번 주 통계 보기
           </a>
         </div>
       </div>

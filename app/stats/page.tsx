@@ -1,9 +1,8 @@
-// app/stats/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { startOfWeek, endOfWeek, format } from 'date-fns';
+import { startOfWeek, endOfWeek, format, subDays } from 'date-fns';
 
 interface WeeklyStats {
   [key: string]: number;
@@ -20,10 +19,9 @@ export default function StatsPage() {
   const loadWeeklyStats = async () => {
     const today = new Date();
     const monday = startOfWeek(today, { weekStartsOn: 1 });
-    const friday = endOfWeek(today, { weekStartsOn: 1 });
-    friday.setDate(friday.getDate() - 2); // 금요일까지만
+    const friday = subDays(endOfWeek(today, { weekStartsOn: 1 }), 2);
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('attendance')
       .select('member_name')
       .gte('check_in_date', format(monday, 'yyyy-MM-dd'))
@@ -41,30 +39,24 @@ export default function StatsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-gray-600">로딩중...</div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">로딩중...</div>;
   }
 
   const sortedStats = Object.entries(stats).sort((a, b) => b[1] - a[1]);
   const total = Object.values(stats).reduce((sum, count) => sum + count, 0);
   const avg = sortedStats.length > 0 ? total / sortedStats.length : 0;
-  const perfectCount = sortedStats.filter(([_, count]) => count === 5).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            📊 이번 주 필사 출석부
+            이번 주 필사 출석부
           </h1>
-          <p className="text-gray-600">월요일 ~ 금요일</p>
+          <p className="text-gray-600">월요일 - 금요일</p>
         </div>
 
-        {/* 통계 카드 */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-md p-4 text-center">
             <div className="text-2xl font-bold text-yellow-600">{sortedStats.length}</div>
             <div className="text-sm text-gray-600">참여 인원</div>
@@ -73,35 +65,16 @@ export default function StatsPage() {
             <div className="text-2xl font-bold text-blue-600">{avg.toFixed(1)}</div>
             <div className="text-sm text-gray-600">평균 인증</div>
           </div>
-          <div className="bg-white rounded-xl shadow-md p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{perfectCount}</div>
-            <div className="text-sm text-gray-600">퍼펙트 🏆</div>
-          </div>
         </div>
 
-        {/* 개인별 통계 */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">개인별 인증 횟수</h2>
           <div className="space-y-3">
-            {sortedStats.map(([name, count], index) => (
+            {sortedStats.map(([name, count]) => (
               <div key={name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-gray-400">
-                    #{index + 1}
-                  </span>
-                  <span className="font-medium text-gray-800">{name}</span>
-                </div>
+                <span className="font-medium text-gray-800">{name}</span>
                 <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} className="text-xl">
-                        {i < count ? '⭐' : '☆'}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="text-lg font-bold text-yellow-600 ml-2">
-                    {count}회
-                  </span>
+                  <span className="text-lg font-bold text-yellow-600">{count}회</span>
                   {count === 5 && <span className="text-2xl">🏆</span>}
                 </div>
               </div>
@@ -109,13 +82,9 @@ export default function StatsPage() {
           </div>
         </div>
 
-        {/* 돌아가기 버튼 */}
         <div className="mt-8 text-center">
-          
-            href="/"
-            className="inline-block px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold rounded-lg transition-colors"
-          >
-            ← 체크인 페이지로 돌아가기
+          <a href="/" className="inline-block px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold rounded-lg">
+            체크인 페이지로 돌아가기
           </a>
         </div>
       </div>
