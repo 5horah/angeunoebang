@@ -1,65 +1,183 @@
-import Image from "next/image";
+// app/page.tsx
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { format } from 'date-fns';
+
+interface Member {
+  id: number;
+  name: string;
+  emoji: string;
+}
+
+interface TodayStatus {
+  [key: string]: boolean;
+}
+
+export default function CheckInPage() {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [todayStatus, setTodayStatus] = useState<TodayStatus>({});
+  const [loading, setLoading] = useState(false);
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  // 모임원 목록 불러오기
+  useEffect(() => {
+    loadMembers();
+    loadTodayStatus();
+  }, []);
+
+  const loadMembers = async () => {
+    const { data, error } = await supabase
+      .from('members')
+      .select('*')
+      .order('name');
+    
+    if (data) setMembers(data);
+  };
+
+  const loadTodayStatus = async () => {
+    const { data, error } = await supabase
+      .from('attendance')
+      .select('member_name')
+      .eq('check_in_date', today);
+    
+    if (data) {
+      const status: TodayStatus = {};
+      data.forEach(record => {
+        status[record.member_name] = true;
+      });
+      setTodayStatus(status);
+    }
+  };
+
+  const handleCheckIn = async (memberName: string) => {
+    setLoading(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('attendance')
+        .insert({
+          member_name: memberName,
+          check_in_date: today,
+        });
+      
+      if (error) {
+        if (error.code === '23505') {
+          // 중복 - 이미 체크인함
+          alert(`${memberName}님은 오늘 이미 인증하셨습니다! ✅`);
+        } else {
+          throw error;
+        }
+      } else {
+        // 성공
+        setTodayStatus(prev => ({ ...prev, [memberName]: true }));
+        
+        // 성공 애니메이션
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTQIGGS56ejAbSkGMIzT8shyJAUrhc/y2ow2Bxhl');
+        audio.play().catch(() => {});
+        
+        setTimeout(() => {
+          alert(`✅ ${memberName}님 오늘 필사 인증 완료!\n내일도 화이팅! 💪`);
+        }, 100);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-yellow-50">
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        {/* 헤더 */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            📚 필사 모임 출석부
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-600">
+            {format(new Date(), 'yyyy년 MM월 dd일')}
+          </p>
+          <p className="text-sm text-gray-500 mt-2">
+            오늘 필사를 완료하셨나요? 버튼을 눌러주세요!
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* 체크인 버튼들 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {members.map(member => {
+            const isCheckedIn = todayStatus[member.name];
+            
+            return (
+              <button
+                key={member.id}
+                onClick={() => handleCheckIn(member.name)}
+                disabled={loading || isCheckedIn}
+                className={`
+                  relative p-6 rounded-2xl font-bold text-xl
+                  transition-all duration-300 transform
+                  ${isCheckedIn
+                    ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                    : 'bg-yellow-400 text-gray-800 hover:bg-yellow-500 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
+                  }
+                  ${loading ? 'opacity-50 cursor-wait' : ''}
+                `}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-3xl">{member.emoji}</span>
+                  <span>{member.name}</span>
+                  {isCheckedIn && (
+                    <span className="text-2xl">✅</span>
+                  )}
+                </div>
+                
+                {isCheckedIn && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-sm font-normal text-green-600">
+                      인증 완료!
+                    </span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 오늘의 현황 */}
+        <div className="bg-white rounded-xl shadow-md p-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">
+            📊 오늘의 인증 현황
+          </h2>
+          <div className="space-y-2">
+            {members.map(member => (
+              <div key={member.id} className="flex items-center justify-between py-2 border-b last:border-b-0">
+                <span className="text-gray-700">
+                  {member.emoji} {member.name}
+                </span>
+                <span>
+                  {todayStatus[member.name] ? (
+                    <span className="text-green-600 font-medium">✅ 완료</span>
+                  ) : (
+                    <span className="text-gray-400">⏳ 대기중</span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 주간 통계 링크 */}
+        <div className="mt-8 text-center">
+          
+            href="/stats"
+            className="text-yellow-600 hover:text-yellow-700 font-medium underline"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
+            📈 이번 주 통계 보기
           </a>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
