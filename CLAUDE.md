@@ -45,8 +45,15 @@ lib/
 
 **`attendance` table:**
 
-- `member_name`, `check_in_date` (yyyy-MM-dd format)
+- `member_name`, `check_in_date` (yyyy-MM-dd format), `image_url` (text, nullable), `reason` (text, nullable)
 - Unique constraint on (member_name, check_in_date)
+- 인증 시 사진 또는 사유 중 하나 저장 (사유만 있으면 image_url null)
+
+**`reason_periods` table (멤버별 사유 기간, 모달에서 저장·관리):**
+
+- `id`, `member_name` (text), `start_date`, `end_date`, `default_reason` (text)
+- 해당 기간에 그 멤버가 「사유로 인증」 선택 시 default_reason이 입력란에 자동 채워짐
+- `member_name` 없으면: `ALTER TABLE reason_periods ADD COLUMN member_name text;`
 
 ## Key Patterns
 

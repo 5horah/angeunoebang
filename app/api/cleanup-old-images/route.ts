@@ -56,11 +56,27 @@ export async function GET() {
 
     if (updateError) throw updateError;
 
+    // 기간이 지난 사유 기간 삭제 (end_date < 오늘)
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const { data: deletedPeriods, error: periodError } = await admin
+      .from('reason_periods')
+      .delete()
+      .lt('end_date', today)
+      .select('id');
+
+    if (periodError) {
+      console.warn('cleanup reason_periods:', periodError);
+    }
+
+    const periodsRemoved = Array.isArray(deletedPeriods) ? deletedPeriods.length : 0;
+
     return NextResponse.json({
       success: true,
-      message: `${ids.length}건 이미지 정리 완료 (기준: ${oneMonthAgo} 이전)`,
+      message: `${ids.length}건 이미지 정리 완료 (기준: ${oneMonthAgo} 이전)` +
+        (periodsRemoved > 0 ? `, 기간 지난 사유 기간 ${periodsRemoved}건 삭제` : ''),
       cleaned: ids.length,
       storageRemoved: pathsToRemove.length,
+      reasonPeriodsRemoved: periodsRemoved,
     });
   } catch (err) {
     console.error('cleanup-old-images error:', err);
