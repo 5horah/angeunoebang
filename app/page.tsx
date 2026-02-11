@@ -43,6 +43,8 @@ export default function CheckInPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
+  const [modalContentOverflows, setModalContentOverflows] = useState(false);
 
   // 이미지 확대 모달
   const [showImageModal, setShowImageModal] = useState(false);
@@ -70,6 +72,32 @@ export default function CheckInPage() {
     loadMembers();
     loadTodayStatus();
   }, []);
+
+  // 팝업 열릴 때 body 스크롤 막기
+  const modalOpen = showConfirmModal || showImageModal || showReasonModal;
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [modalOpen]);
+
+  // 팝업 내용이 최대 높이를 넘으면 하단에 border-top 표시
+  useEffect(() => {
+    if (!showConfirmModal || !selectedMember) {
+      setModalContentOverflows(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const el = modalScrollRef.current;
+      setModalContentOverflows(Boolean(el && el.scrollHeight > el.clientHeight));
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [showConfirmModal, selectedMember, certifyMode]);
 
   useEffect(() => {
     if (!showConfirmModal || !selectedMember) {
@@ -314,7 +342,7 @@ export default function CheckInPage() {
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
           onClick={() => setShowImageModal(false)}
         >
-          <div className="relative max-w-3xl max-h-[90vh]">
+          <div className="relative max-w-3xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
             <img
               src={modalImage}
               alt="필사 인증"
@@ -358,22 +386,38 @@ export default function CheckInPage() {
 
       {/* 확인 모달 */}
       {showConfirmModal && selectedMember && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 animate-scale-in border border-[#e3e2de] max-h-[90vh] overflow-y-auto">
-            <div className="text-center mb-5">
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowConfirmModal(false);
+            setSelectedMember(null);
+            setSelectedImage(null);
+            setImagePreview(null);
+            setReasonText('');
+            setReasonCertifyStart('');
+            setReasonCertifyEnd('');
+            setCertifyMode('image');
+          }}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] flex flex-col animate-scale-in border border-[#e3e2de]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div ref={modalScrollRef} className="flex-1 min-h-0 overflow-y-auto p-6">
+            <div className="text-center mb-6">
               <span className="text-5xl">{selectedMember.emoji}</span>
-              <h2 className="text-lg font-semibold text-[#37352f] mt-3">
+              <h2 className="text-xl font-semibold text-[#37352f] mt-2">
                 {selectedMember.name}
               </h2>
             </div>
 
             {/* 인증 방식 선택 */}
-            <div className="flex rounded-md border border-[#e3e2de] p-0.5 mb-2">
+            <div className="flex gap-2 mb-2">
               <button
                 type="button"
                 onClick={() => setCertifyMode('image')}
                 className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-                  certifyMode === 'image' ? 'bg-[#2eaadc] text-white' : 'text-[#787774] hover:bg-[#f7f6f3]'
+                  certifyMode === 'image' ? 'bg-[#2B7FFF] text-white' : 'bg-[#F3F4F6] text-[#364153]'
                 }`}
               >
                 📷 사진
@@ -382,7 +426,7 @@ export default function CheckInPage() {
                 type="button"
                 onClick={() => setCertifyMode('reason')}
                 className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-                  certifyMode === 'reason' ? 'bg-[#2eaadc] text-white' : 'text-[#787774] hover:bg-[#f7f6f3]'
+                  certifyMode === 'reason' ? 'bg-[#2B7FFF] text-white' : 'bg-[#F3F4F6] text-[#364153]'
                 }`}
               >
                 ✏️ 사유
@@ -392,12 +436,12 @@ export default function CheckInPage() {
               type="button"
               onClick={() => !usedSuperExemptionThisWeek && setCertifyMode('super')}
               disabled={usedSuperExemptionThisWeek}
-              className={`w-full py-2 text-sm font-medium rounded-md border transition-colors mb-4 ${
+              className={`w-full py-3 text-sm font-medium rounded-md border transition-colors mb-4 ${
                 certifyMode === 'super'
-                  ? 'bg-[#f0e6d3] border-[#d4a853] text-[#8b6914]'
+                  ? 'bg-[#FEFCE8] border-[#FDC700] text-[#894B00]'
                   : usedSuperExemptionThisWeek
-                    ? 'bg-[#f7f6f3] border-[#e3e2de] text-[#a4a4a0] cursor-not-allowed'
-                    : 'border-[#e3e2de] text-[#787774] hover:bg-[#f7f6f3]'
+                    ? 'bg-[#F9FAFB] border-[#E5E7EB] text-[#4A5565] cursor-not-allowed'
+                    : 'border-[#E5E7EB] text-[#364153]'
               }`}
               title={usedSuperExemptionThisWeek ? '이번 주 이미 사용함' : '주 1회 사용 가능'}
             >
@@ -406,8 +450,8 @@ export default function CheckInPage() {
 
             {(certifyMode === 'image' || certifyMode === 'super') && (
               /* 이미지 업로드 영역 (사진 인증 / 슈퍼 면제권 공통) */
-              <div className="mb-5">
-                <p className="text-sm font-medium text-[#37352f] mb-2">
+              <div>
+                <p className="text-sm font-medium text-[#0A0A0A] mb-2">
                   필사 인증 사진 <span className="text-[#e03e3e]">*</span>
                 </p>
                 {imagePreview ? (
@@ -433,10 +477,10 @@ export default function CheckInPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-32 border-2 border-dashed border-[#e3e2de] rounded-md flex flex-col items-center justify-center gap-2 hover:bg-[#f7f6f3] transition-colors"
+                    className="w-full h-48 border-2 border-dashed border-[#D1D5DC] rounded-md flex flex-col items-center justify-center gap-2 hover:bg-[#f7f6f3] transition-colors"
                   >
                     <span className="text-2xl">📷</span>
-                    <span className="text-sm text-[#787774]">사진 선택하기</span>
+                    <span className="text-sm text-[#6A7282]">사진 선택하기</span>
                   </button>
                 )}
                 <input
@@ -451,38 +495,38 @@ export default function CheckInPage() {
             {certifyMode === 'reason' && (
               <div className="mb-5 space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-[#37352f] mb-2">
+                  <p className="text-sm font-medium text-[#0A0A0A] mb-2">
                     사유 <span className="text-[#e03e3e]">*</span>
                   </p>
                   <textarea
                     value={reasonText}
                     onChange={(e) => setReasonText(e.target.value)}
                     placeholder="예: 병으로 인해 필사 생략"
-                    className="w-full min-h-[100px] px-3 py-2 text-sm border border-[#e3e2de] rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-[#2eaadc] focus:border-transparent"
+                    className="w-full min-h-[100px] px-3 py-2 text-sm border border-[#e3e2de] rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-[#2B7FFF] focus:border-transparent"
                     maxLength={500}
                   />
-                  <p className="text-xs text-[#787774] mt-1">{reasonText.length}/500</p>
+                  <p className="text-xs text-[#6A7282] mt-1">{reasonText.length}/500</p>
                 </div>
-                <div className="p-3 bg-[#f7f6f3] rounded-md border border-[#e3e2de]">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-xs text-[#787774] mb-0.5">시작일</label>
+                <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="min-w-0">
+                      <label className="block text-xs text-[#4A5565] mb-1">시작일</label>
                       <input
                         type="date"
                         min={today}
                         value={reasonCertifyStart}
                         onChange={(e) => setReasonCertifyStart(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm border border-[#e3e2de] rounded focus:outline-none focus:ring-2 focus:ring-[#2eaadc]"
+                        className="w-full min-w-0 px-2 py-1.5 text-sm border border-[#e3e2de] rounded focus:outline-none focus:ring-2 focus:ring-[#2B7FFF]"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs text-[#787774] mb-0.5">종료일</label>
+                    <div className="min-w-0">
+                      <label className="block text-xs text-[#4A5565] mb-1">종료일</label>
                       <input
                         type="date"
                         min={today}
                         value={reasonCertifyEnd}
                         onChange={(e) => setReasonCertifyEnd(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm border border-[#e3e2de] rounded focus:outline-none focus:ring-2 focus:ring-[#2eaadc]"
+                        className="w-full min-w-0 px-2 py-1.5 text-sm border border-[#e3e2de] rounded focus:outline-none focus:ring-2 focus:ring-[#2B7FFF]"
                       />
                     </div>
                   </div>
@@ -528,7 +572,7 @@ export default function CheckInPage() {
                         setPeriodSaving(false);
                       }
                     }}
-                    className="mt-2 w-full py-1.5 text-xs font-medium text-[#2eaadc] border border-[#2eaadc] rounded hover:bg-[#f0f9fd] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-4 w-full py-2 text-sm font-medium text-[#155DFC] border border-[#155DFC] rounded hover:bg-[#f0f9fd] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {periodSaving ? '저장 중...' : '해당 사유 기간 저장'}
                   </button>
@@ -597,44 +641,51 @@ export default function CheckInPage() {
                 </p>
               </div>
             )}
+            </div>
 
-            {/* 버튼 */}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  setSelectedMember(null);
-                  setSelectedImage(null);
-                  setImagePreview(null);
-                  setReasonText('');
-                  setReasonCertifyStart('');
-                  setReasonCertifyEnd('');
-                  setCertifyMode('image');
-                  setUsedSuperExemptionThisWeek(false);
-                }}
-                disabled={loading}
-                className="flex-1 px-4 py-2 text-sm font-medium text-[#37352f] bg-white border border-[#e3e2de] rounded-md hover:bg-[#f7f6f3] transition-colors"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmCheckIn}
-                disabled={
-                  loading ||
-                  (certifyMode === 'image' && !selectedImage) ||
-                  (certifyMode === 'reason' && !reasonText.trim()) ||
-                  (certifyMode === 'super' && (!selectedImage || usedSuperExemptionThisWeek))
-                }
-                className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  ((certifyMode === 'image' || certifyMode === 'super') && selectedImage) || (certifyMode === 'reason' && reasonText.trim())
-                    ? !loading ? 'bg-[#2eaadc] text-white hover:bg-[#2898c7]' : 'bg-[#e3e2de] text-[#a4a4a0] cursor-not-allowed'
-                    : 'bg-[#e3e2de] text-[#a4a4a0] cursor-not-allowed'
-                }`}
-              >
-                {uploading ? '업로드중...' : loading ? '처리중...' : certifyMode === 'super' ? '면제권 사용' : '인증하기'}
-              </button>
+            {/* 하단 버튼 영역 (고정) - 내용이 넘칠 때만 border-top */}
+            <div
+              className={`shrink-0 p-6 pt-0 bg-white rounded-b-lg ${
+                modalContentOverflows ? 'border-t border-[#E5E7EB] pl-4 pr-4 pb-4 pt-4' : ''
+              }`}
+            >
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setSelectedMember(null);
+                    setSelectedImage(null);
+                    setImagePreview(null);
+                    setReasonText('');
+                    setReasonCertifyStart('');
+                    setReasonCertifyEnd('');
+                    setCertifyMode('image');
+                    setUsedSuperExemptionThisWeek(false);
+                  }}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-[#0A0A0A] bg-white border border-[#e6e6e6] rounded-md hover:bg-[#f7f6f3] transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmCheckIn}
+                  disabled={
+                    loading ||
+                    (certifyMode === 'image' && !selectedImage) ||
+                    (certifyMode === 'reason' && !reasonText.trim()) ||
+                    (certifyMode === 'super' && (!selectedImage || usedSuperExemptionThisWeek))
+                  }
+                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    ((certifyMode === 'image' || certifyMode === 'super') && selectedImage) || (certifyMode === 'reason' && reasonText.trim())
+                      ? !loading ? 'bg-[#2B7FFF] text-white' : 'bg-[#E5E7EB] text-[#364153] cursor-not-allowed'
+                      : 'bg-[#E5E7EB] text-[#364153] cursor-not-allowed'
+                  }`}
+                >
+                  {uploading ? '업로드중...' : loading ? '처리중...' : certifyMode === 'super' ? '면제권 사용' : '인증하기'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

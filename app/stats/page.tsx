@@ -226,11 +226,11 @@ export default function StatsPage() {
                         {index + 1}
                       </span>
                       <span className="text-sm text-[#0A0A0A]">{name}</span>
-                      {/* {isPerfect && ( */}
+                      {isPerfect && ( 
                         <span className="px-1.5 py-0.5 bg-[#DCFCE7] text-[#008236] rounded text-xs">
                           완벽
                         </span>
-                      {/* )} */}
+                      )} 
                     </div>
 
                     <div className="flex items-center gap-3">
