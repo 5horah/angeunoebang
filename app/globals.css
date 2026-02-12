@@ -2,16 +2,67 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #37352f;
+  --foreground: #0A0A0A;
   --gray-light: #f7f6f3;
   --gray-border: #e3e2de;
   --gray-text: #787774;
-  --accent: #2eaadc;
+  /* 공통 UI 색상 */
+  --primary: #2B7FFF;
+  --primary-hover: #155DFC;
+  --gray-bg: #F3F4F6;
+  --gray-panel: #F9FAFB;
+  --gray-border-alt: #E5E7EB;
+  --text-muted: #4A5565;
+  --text-muted-dark: #364153;
+  --danger: #e03e3e;
+  --danger-strong: #E7000B;
+  --success: #00A63E;
+  --success-dark: #0f7b4c;
+  --success-bg: #F0FDF4;
+  --success-light: #DCFCE7;
+  --success-num: #008236;
+  --warning: #8b6914;
+  --warning-bg: #FEFCE8;
+  --warning-border: #FDC700;
+  --warning-text: #894B00;
+  --gray-border-light: #D1D5DC;
+  --gray-icon: #99A1AF;
+  --gray-text-light: #6A7282;
+  --border-input: #e6e6e6;
+  --border-disabled: #c8c8c8;
+  --text-primary: #0A0A0A;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-gray-light: var(--gray-light);
+  --color-gray-border: var(--gray-border);
+  --color-gray-text: var(--gray-text);
+  --color-gray-bg: var(--gray-bg);
+  --color-gray-panel: var(--gray-panel);
+  --color-gray-border-alt: var(--gray-border-alt);
+  --color-text-muted: var(--text-muted);
+  --color-text-muted-dark: var(--text-muted-dark);
+  --color-danger: var(--danger);
+  --color-danger-strong: var(--danger-strong);
+  --color-success: var(--success);
+  --color-success-dark: var(--success-dark);
+  --color-success-bg: var(--success-bg);
+  --color-success-light: var(--success-light);
+  --color-success-num: var(--success-num);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-warning-text: var(--warning-text);
+  --color-gray-border-light: var(--gray-border-light);
+  --color-gray-icon: var(--gray-icon);
+  --color-gray-text-light: var(--gray-text-light);
+  --color-border-input: var(--border-input);
+  --color-border-disabled: var(--border-disabled);
+  --color-text-primary: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -20,6 +71,25 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+/* Safari(iOS)에서 date 입력 글자·디폴트 텍스트 안 보이는 현상 방지 */
+input[type="date"] {
+  max-width: -webkit-fill-available;
+  color: var(--foreground);
+  -webkit-text-fill-color: var(--foreground);
+}
+/* 빈 상태(날짜 선택 등) 디폴트 텍스트 */
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  color: var(--foreground);
+  -webkit-text-fill-color: var(--foreground);
+  opacity: 1;
+}
+
+input[type="date"]:invalid::-webkit-datetime-edit {
+  color: var(--gray-text);
+  -webkit-text-fill-color: var(--gray-text);
 }
 
 @keyframes scale-in {
@@ -51,3 +121,4 @@ body {
 .animate-scale-in {
   animation: scale-in 0.15s ease-out;
 }
+

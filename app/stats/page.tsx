@@ -140,8 +140,8 @@ export default function StatsPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#2eaadc] border-t-transparent mx-auto mb-3"></div>
-          <p className="text-sm text-[#787774]">통계를 불러오는 중...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent border-t-transparent mx-auto mb-3"></div>
+          <p className="text-sm text-gray-text">통계를 불러오는 중...</p>
         </div>
       </div>
     );
@@ -157,7 +157,7 @@ export default function StatsPage() {
       {/* 복사 완료 알림 */}
       {copied && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
-          <div className="bg-[#0f7b4c] text-white px-4 py-2 rounded-md shadow-lg flex items-center gap-2 text-sm">
+          <div className="bg-success text-white px-4 py-2 rounded-md shadow-lg flex items-center gap-2 text-sm">
             <span>✓</span>
             <span>클립보드에 복사되었습니다</span>
           </div>
@@ -165,50 +165,50 @@ export default function StatsPage() {
       )}
 
       {/* 헤더 */}
-      <div className="border-b border-[#e3e2de]">
+      <div className="border-b border-gray-border">
         <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">📖</span>
-            <h1 className="text-xl font-bold text-[#0A0A0A]">앙그뇌방</h1>
+            <h1 className="text-xl font-bold text-text-primary">앙그뇌방</h1>
           </div>
-          <p className="text-sm text-[#4A5565]">
+          <p className="text-sm text-text-muted">
             앙큼한 그녀들의 뇌가 섹시해지는 방법
           </p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-4">
-        <p className="text-sl font-semibold text-[#0A0A0A] mb-1">
+        <p className="text-sl font-semibold text-text-primary mb-1">
             이번 주 통계
         </p>
           {/* 기간 표시 */}
-        <p className="text-sm text-[#4A5565]">
+        <p className="text-sm text-text-muted">
           {format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'M월 d일', { locale: ko })}
           {' - '}
           {format(subDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 2), 'M월 d일', { locale: ko })}
         </p>
         {/* 통계 카드 */}
         <div className="grid grid-cols-3 gap-3 my-6">
-          <div className="p-4 bg-[#F9FAFB] rounded-lg">
-            <div className="text-2xl font-bold text-[#0A0A0A]">{sortedStats.length}</div>
-            <div className="text-xs text-[#4A5565] mt-1">참여 인원</div>
+          <div className="p-4 bg-gray-panel rounded-lg">
+            <div className="text-2xl font-bold text-text-primary">{sortedStats.length}</div>
+            <div className="text-xs text-text-muted mt-1">참여 인원</div>
           </div>
 
-          <div className="p-4 bg-[#F9FAFB] rounded-lg">
-            <div className="text-2xl font-bold text-[#0A0A0A]">{avg.toFixed(1)}회</div>
-            <div className="text-xs text-[#4A5565] mt-1">평균 인증</div>
+          <div className="p-4 bg-gray-panel rounded-lg">
+            <div className="text-2xl font-bold text-text-primary">{avg.toFixed(1)}회</div>
+            <div className="text-xs text-text-muted mt-1">평균 인증</div>
           </div>
 
-          <div className="p-4 bg-[#F9FAFB] rounded-lg">
-            <div className="text-2xl font-bold text-[#0A0A0A]">{perfectCount}명</div>
-            <div className="text-xs text-[#4A5565] mt-1">완벽 출석</div>
+          <div className="p-4 bg-gray-panel rounded-lg">
+            <div className="text-2xl font-bold text-text-primary">{perfectCount}명</div>
+            <div className="text-xs text-text-muted mt-1">완벽 출석</div>
           </div>
         </div>
 
         {/* 순위 테이블 */}
-        <div className="bg-[#F9FAFB] rounded-lg mb-6 py-4">
+        <div className="bg-gray-panel rounded-lg mb-6 py-4">
           <div className="px-4 pb-3">
-            <h2 className="text-sm font-semibold text-[#0A0A0A]">개인별 인증 횟수</h2>
+            <h2 className="text-sm font-semibold text-text-primary">개인별 인증 횟수</h2>
           </div>
 
           {sortedStats.length > 0 ? (
@@ -219,15 +219,15 @@ export default function StatsPage() {
                 return (
                   <div
                     key={name}
-                    className="flex items-center justify-between px-4 py-2 hover:bg-[#f7f6f3] transition-colors"
+                    className="flex items-center justify-between px-4 py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-6 text-sm text-[#4A5565]">
+                      <span className="w-6 text-sm text-text-muted">
                         {index + 1}
                       </span>
-                      <span className="text-sm text-[#0A0A0A]">{name}</span>
+                      <span className="text-sm text-text-primary">{name}</span>
                       {isPerfect && ( 
-                        <span className="px-1.5 py-0.5 bg-[#DCFCE7] text-[#008236] rounded text-xs">
+                        <span className="px-1.5 py-0.5 bg-success-light text-success-num rounded text-xs">
                           완벽
                         </span>
                       )} 
@@ -239,12 +239,12 @@ export default function StatsPage() {
                           <div
                             key={i}
                             className={`w-2 h-2 rounded-full ${
-                              i < count ? 'bg-[#2B7FFF]' : 'bg-[#D1D5DC]'
+                              i < count ? 'bg-primary' : 'bg-gray-border-light'
                             }`}
                           />
                         ))}
                       </div>
-                      <span className="text-sm font-medium text-[#0A0A0A] w-8 text-right">
+                      <span className="text-sm font-medium text-text-primary w-8 text-right">
                         {count}회
                       </span>
                     </div>
@@ -253,7 +253,7 @@ export default function StatsPage() {
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-[#787774]">
+            <div className="text-center py-8 text-gray-text">
               <p className="text-sm">아직 인증 기록이 없습니다</p>
             </div>
           )}
@@ -261,29 +261,30 @@ export default function StatsPage() {
 
         {/* 클립보드 복사 버튼 */}
         <button
+          type="button"
           onClick={handleCopyToClipboard}
           disabled={sortedStats.length === 0}
-          className={`w-full py-3 rounded-md text-sm font-medium transition-colors mb-2 ${
+          className={`w-full py-3 rounded-md text-sm font-medium cursor-pointer transition-colors mb-2 ${
             sortedStats.length > 0
-              ? 'bg-[#2B7FFF] text-white hover:bg-[#2898c7]'
-              : 'bg-[#e3e2de] text-[#a4a4a0] cursor-not-allowed'
+              ? 'bg-primary text-white'
+              : 'bg-gray-border text-gray-text cursor-not-allowed'
           }`}
         >
           카톡으로 공유하기
         </button>
 
-        <p className="text-center text-xs text-[#6A7282] mb-8">
+        <p className="text-center text-xs text-gray-text-light mb-8">
           버튼을 누르면 클립보드에 복사됩니다
         </p>
 
         {/* 이번 주 인증 슬라이드 (사진 + 사유) */}
         {weeklyItems.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-sm font-semibold text-[#0A0A0A] mb-3">이번 주 인증</h2>
+            <h2 className="text-sm font-semibold text-text-primary mb-3">이번 주 인증</h2>
             <div className="relative">
               <div
                 ref={slideRef}
-                className="overflow-hidden rounded-lg border border-[#E5E7EB] select-none"
+                className="overflow-hidden rounded-lg border border-gray-border-alt select-none"
                 onTouchStart={(e) => { touchStartX.current = e.targetTouches[0].clientX; }}
                 onTouchEnd={(e) => {
                   touchEndX.current = e.changedTouches[0].clientX;
@@ -302,11 +303,11 @@ export default function StatsPage() {
                         if (item.image_url) setModalImage(item.image_url);
                         else if (item.reason) setModalReason({ name: item.member_name, date: item.check_in_date, text: item.reason });
                       }}
-                      className="flex-shrink-0 w-full text-left focus:outline-none focus:ring-2 focus:ring-[#2eaadc] focus:ring-inset rounded-lg"
+                      className="flex-shrink-0 w-full text-left focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset rounded-lg"
                     >
                       {item.image_url ? (
                         <>
-                          <div className="aspect-[4/3] bg-[#F9FAFB] relative">
+                          <div className="aspect-[4/3] bg-gray-panel relative">
                             <img
                               src={item.image_url}
                               alt={`${item.member_name} ${item.check_in_date}`}
@@ -314,27 +315,27 @@ export default function StatsPage() {
                               draggable={false}
                             />
                           </div>
-                          <div className="px-3 py-2 bg-white border-t border-[#e3e2de]">
-                            <p className="text-sm font-medium text-[#37352f]">{item.member_name}</p>
-                            <p className="text-xs text-[#787774]">
+                          <div className="px-3 py-2 bg-white border-t border-gray-border">
+                            <p className="text-sm font-medium text-foreground">{item.member_name}</p>
+                            <p className="text-xs text-gray-text">
                               {format(new Date(item.check_in_date), 'M월 d일', { locale: ko })}
                             </p>
                           </div>
                         </>
                       ) : (
-                        <div className="aspect-[4/3] bg-[#f7f6f3] flex flex-col items-center justify-center px-4 border-b border-[#e3e2de]">
+                        <div className="aspect-[4/3] bg-gray-light flex flex-col items-center justify-center px-4 border-b border-gray-border">
                           <span className="text-2xl mb-2">
                             {item.reason === '슈퍼 면제권' ? '⭐' : '✏️'}
                           </span>
-                          <p className="text-sm text-[#37352f] line-clamp-3 text-center">
+                          <p className="text-sm text-foreground line-clamp-3 text-center">
                             {item.reason === '슈퍼 면제권' ? '슈퍼 면제권 사용' : item.reason}
                           </p>
                         </div>
                       )}
                       {!item.image_url && item.reason && (
-                        <div className="px-3 py-2 bg-white border-t border-[#E5E7EB]">
-                          <p className="text-sm font-medium text-[#37352f]">{item.member_name}</p>
-                          <p className="text-xs text-[#787774]">
+                        <div className="px-3 py-2 bg-white border-t border-gray-border-alt">
+                          <p className="text-sm font-medium text-foreground">{item.member_name}</p>
+                          <p className="text-xs text-gray-text">
                             {format(new Date(item.check_in_date), 'M월 d일', { locale: ko })}
                           </p>
                         </div>
@@ -350,7 +351,7 @@ export default function StatsPage() {
                   <button
                     type="button"
                     onClick={() => setSlideIndex((i) => (i <= 0 ? weeklyItems.length - 1 : i - 1))}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#37352f] hover:bg-white"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center text-foreground cursor-pointer"
                     aria-label="이전"
                   >
                     ‹
@@ -358,7 +359,7 @@ export default function StatsPage() {
                   <button
                     type="button"
                     onClick={() => setSlideIndex((i) => (i >= weeklyItems.length - 1 ? 0 : i + 1))}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center text-[#37352f] hover:bg-white"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow-md flex items-center justify-center text-foreground cursor-pointer"
                     aria-label="다음"
                   >
                     ›
@@ -374,8 +375,8 @@ export default function StatsPage() {
                       key={index}
                       type="button"
                       onClick={() => setSlideIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index === slideIndex ? 'bg-[#2B7FFF]' : 'bg-[#D1D5DC]'
+                      className={`w-2 h-2 rounded-full transition-colors cursor-pointer ${
+                        index === slideIndex ? 'bg-primary' : 'bg-gray-border-light'
                       }`}
                       aria-label={`${index + 1}번째`}
                     />
@@ -402,7 +403,7 @@ export default function StatsPage() {
               <button
                 type="button"
                 onClick={() => setModalImage(null)}
-                className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#37352f] shadow-lg"
+                className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-foreground shadow-lg cursor-pointer"
               >
                 ✕
               </button>
@@ -420,16 +421,16 @@ export default function StatsPage() {
               className="bg-white rounded-lg shadow-xl max-w-sm w-full p-5"
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="text-xs text-[#787774] mb-1">
+              <p className="text-xs text-gray-text mb-1">
                 {modalReason.name} · {format(new Date(modalReason.date), 'M월 d일', { locale: ko })}
               </p>
-              <p className="text-sm text-[#37352f] whitespace-pre-wrap break-words">
+              <p className="text-sm text-foreground whitespace-pre-wrap break-words">
                 {modalReason.text}
               </p>
               <button
                 type="button"
                 onClick={() => setModalReason(null)}
-                className="mt-4 w-full py-2 text-sm font-medium text-[#2eaadc] border border-[#2eaadc] rounded-md hover:bg-[#f0f9fd]"
+                className="mt-4 w-full py-2 text-sm font-medium text-accent border border-accent rounded-md"
               >
                 닫기
               </button>
@@ -438,10 +439,10 @@ export default function StatsPage() {
         )}
 
         {/* 돌아가기 */}
-        <div className="text-center border-t border-[#e3e2de] pt-6">
+        <div className="text-center border-t border-gray-border pt-6">
           <a
             href="/"
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#155DFC] hover:bg-[#f7f6f3] rounded-md transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary-hover rounded-md"
           >
             <span>←</span>
             <span>체크인 페이지로 돌아가기</span>

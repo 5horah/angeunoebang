@@ -351,7 +351,7 @@ export default function CheckInPage() {
             <button
               type="button"
               onClick={() => setShowImageModal(false)}
-              className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#37352f] shadow-lg"
+              className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center text-foreground shadow-lg"
             >
               ✕
             </button>
@@ -369,14 +369,14 @@ export default function CheckInPage() {
             className="bg-white rounded-lg shadow-xl max-w-sm w-full p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-sm font-semibold text-[#37352f] mb-2">인증 사유</h3>
-            <p className="text-sm text-[#37352f] whitespace-pre-wrap break-words">
+            <h3 className="text-sm font-semibold text-foreground mb-2">인증 사유</h3>
+            <p className="text-sm text-foreground whitespace-pre-wrap break-words">
               {modalReasonText}
             </p>
             <button
               type="button"
               onClick={() => setShowReasonModal(false)}
-              className="mt-4 w-full py-2 text-sm font-medium text-[#2eaadc] border border-[#2eaadc] rounded-md hover:bg-[#f0f9fd]"
+              className="mt-4 w-full py-2 text-sm font-medium text-accent border border-accent rounded-md"
             >
               닫기
             </button>
@@ -400,13 +400,13 @@ export default function CheckInPage() {
           }}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] flex flex-col animate-scale-in border border-[#e3e2de]"
+            className="bg-white rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] flex flex-col animate-scale-in border border-gray-border"
             onClick={(e) => e.stopPropagation()}
           >
             <div ref={modalScrollRef} className="flex-1 min-h-0 overflow-y-auto p-6">
             <div className="text-center mb-6">
               <span className="text-5xl">{selectedMember.emoji}</span>
-              <h2 className="text-xl font-semibold text-[#37352f] mt-2">
+              <h2 className="text-xl font-semibold text-foreground mt-2">
                 {selectedMember.name}
               </h2>
             </div>
@@ -416,8 +416,8 @@ export default function CheckInPage() {
               <button
                 type="button"
                 onClick={() => setCertifyMode('image')}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-                  certifyMode === 'image' ? 'bg-[#2B7FFF] text-white' : 'bg-[#F3F4F6] text-[#364153]'
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                  certifyMode === 'image' ? 'bg-primary text-white' : 'bg-gray-bg text-text-muted-dark'
                 }`}
               >
                 📷 사진
@@ -425,8 +425,8 @@ export default function CheckInPage() {
               <button
                 type="button"
                 onClick={() => setCertifyMode('reason')}
-                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-                  certifyMode === 'reason' ? 'bg-[#2B7FFF] text-white' : 'bg-[#F3F4F6] text-[#364153]'
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                  certifyMode === 'reason' ? 'bg-primary text-white' : 'bg-gray-bg text-text-muted-dark'
                 }`}
               >
                 ✏️ 사유
@@ -436,12 +436,12 @@ export default function CheckInPage() {
               type="button"
               onClick={() => !usedSuperExemptionThisWeek && setCertifyMode('super')}
               disabled={usedSuperExemptionThisWeek}
-              className={`w-full py-3 text-sm font-medium rounded-md border transition-colors mb-4 ${
+              className={`w-full py-3 text-sm font-medium rounded-md border transition-colors mb-4 cursor-pointer ${
                 certifyMode === 'super'
-                  ? 'bg-[#FEFCE8] border-[#FDC700] text-[#894B00]'
+                  ? 'bg-warning-bg border-warning-border text-warning-text'
                   : usedSuperExemptionThisWeek
-                    ? 'bg-[#F9FAFB] border-[#E5E7EB] text-[#4A5565] cursor-not-allowed'
-                    : 'border-[#E5E7EB] text-[#364153]'
+                    ? 'bg-gray-panel border-gray-border-alt text-text-muted cursor-not-allowed'
+                    : 'border-gray-border-alt text-text-muted-dark'
               }`}
               title={usedSuperExemptionThisWeek ? '이번 주 이미 사용함' : '주 1회 사용 가능'}
             >
@@ -451,15 +451,15 @@ export default function CheckInPage() {
             {(certifyMode === 'image' || certifyMode === 'super') && (
               /* 이미지 업로드 영역 (사진 인증 / 슈퍼 면제권 공통) */
               <div>
-                <p className="text-sm font-medium text-[#0A0A0A] mb-2">
-                  필사 인증 사진 <span className="text-[#e03e3e]">*</span>
+                <p className="text-sm font-medium text-text-primary mb-2">
+                  필사 인증 사진 <span className="text-danger">*</span>
                 </p>
                 {imagePreview ? (
                   <div className="relative">
                     <img
                       src={imagePreview}
                       alt="미리보기"
-                      className="w-full h-48 object-cover rounded-md border border-[#e3e2de]"
+                      className="w-full h-48 object-cover rounded-md border border-gray-border"
                     />
                     <button
                       type="button"
@@ -468,7 +468,7 @@ export default function CheckInPage() {
                         setImagePreview(null);
                         if (fileInputRef.current) fileInputRef.current.value = '';
                       }}
-                      className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-[#e03e3e] text-sm"
+                      className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-danger text-sm border border-gray-border cursor-pointer"
                     >
                       ✕
                     </button>
@@ -477,10 +477,10 @@ export default function CheckInPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full h-48 border-2 border-dashed border-[#D1D5DC] rounded-md flex flex-col items-center justify-center gap-2 hover:bg-[#f7f6f3] transition-colors"
+                    className="w-full h-48 border-2 border-dashed border-gray-border-light rounded-md flex flex-col items-center justify-center gap-2 cursor-pointer"
                   >
                     <span className="text-2xl">📷</span>
-                    <span className="text-sm text-[#6A7282]">사진 선택하기</span>
+                    <span className="text-sm text-gray-text-light">사진 선택하기</span>
                   </button>
                 )}
                 <input
@@ -495,38 +495,38 @@ export default function CheckInPage() {
             {certifyMode === 'reason' && (
               <div className="mb-5 space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-[#0A0A0A] mb-2">
-                    사유 <span className="text-[#e03e3e]">*</span>
+                  <p className="text-sm font-medium text-text-primary mb-2">
+                    사유 <span className="text-danger">*</span>
                   </p>
                   <textarea
                     value={reasonText}
                     onChange={(e) => setReasonText(e.target.value)}
-                    placeholder="예: 병으로 인해 필사 생략"
-                    className="w-full min-h-[100px] px-3 py-2 text-sm border border-[#e3e2de] rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-[#2B7FFF] focus:border-transparent"
+                    placeholder="예: 야근 이슈..."
+                    className="w-full min-h-[100px] px-3 py-2 text-sm border border-gray-border rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     maxLength={500}
                   />
-                  <p className="text-xs text-[#6A7282] mt-1">{reasonText.length}/500</p>
+                  <p className="text-xs text-gray-text-light mt-1">{reasonText.length}/500</p>
                 </div>
                 <div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
                     <div className="min-w-0">
-                      <label className="block text-xs text-[#4A5565] mb-1">시작일</label>
+                      <label className="block text-xs text-text-muted mb-1">시작일</label>
                       <input
                         type="date"
                         min={today}
                         value={reasonCertifyStart}
                         onChange={(e) => setReasonCertifyStart(e.target.value)}
-                        className="w-full min-w-0 px-2 py-1.5 text-sm border border-[#e3e2de] rounded focus:outline-none focus:ring-2 focus:ring-[#2B7FFF]"
+                        className="w-full min-w-0 px-2 py-1.5 text-sm border border-gray-border rounded focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
                       />
                     </div>
                     <div className="min-w-0">
-                      <label className="block text-xs text-[#4A5565] mb-1">종료일</label>
+                      <label className="block text-xs text-text-muted mb-1">종료일</label>
                       <input
                         type="date"
                         min={today}
                         value={reasonCertifyEnd}
                         onChange={(e) => setReasonCertifyEnd(e.target.value)}
-                        className="w-full min-w-0 px-2 py-1.5 text-sm border border-[#e3e2de] rounded focus:outline-none focus:ring-2 focus:ring-[#2B7FFF]"
+                        className="w-full min-w-0 px-2 py-1.5 text-sm border border-gray-border rounded focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
                       />
                     </div>
                   </div>
@@ -539,6 +539,17 @@ export default function CheckInPage() {
                       const end = parseISO(reasonCertifyEnd);
                       if (start > end) {
                         alert('시작일이 종료일보다 늦을 수 없습니다.');
+                        return;
+                      }
+                      // 겹치는 기간이 있으면 경고 후 저장 불가
+                      const overlaps = memberReasonPeriods.some(
+                        (p) =>
+                          (reasonCertifyStart >= p.start_date && reasonCertifyStart <= p.end_date) ||
+                          (reasonCertifyEnd >= p.start_date && reasonCertifyEnd <= p.end_date) ||
+                          (reasonCertifyStart <= p.start_date && reasonCertifyEnd >= p.end_date)
+                      );
+                      if (overlaps) {
+                        alert('이미 저장된 사유 기간과 날짜가 겹칩니다. 겹치지 않는 기간으로 입력해 주세요.');
                         return;
                       }
                       setPeriodSaving(true);
@@ -572,36 +583,36 @@ export default function CheckInPage() {
                         setPeriodSaving(false);
                       }
                     }}
-                    className="mt-4 w-full py-2 text-sm font-medium text-[#155DFC] border border-[#155DFC] rounded hover:bg-[#f0f9fd] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-4 w-full py-2 text-sm font-medium text-primary-hover border border-primary-hover rounded disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {periodSaving ? '저장 중...' : '해당 사유 기간 저장'}
                   </button>
                 </div>
-                <div className="border border-[#e3e2de] rounded-md overflow-hidden mt-3">
+                <div className="rounded-md overflow-hidden mt-3">
                   <button
                     type="button"
                     onClick={async () => {
                       setShowReasonPeriodManage((b) => !b);
                       if (!showReasonPeriodManage) await loadMemberReasonPeriods();
                     }}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-[#f7f6f3] hover:bg-[#eeeeec] text-left text-sm"
+                    className="w-full flex items-center justify-between px-3 py-3 bg-gray-panel text-left text-sm cursor-pointer"
                   >
-                    <span className="font-medium text-[#37352f]">저장된 사유 기간 관리</span>
-                    <span className="text-[#787774]">{showReasonPeriodManage ? '▲' : '▼'}</span>
+                    <span className="font-medium text-foreground">저장된 사유 기간 관리</span>
+                    <span className="text-gray-icon">{showReasonPeriodManage ? '▲' : '▼'}</span>
                   </button>
                   {showReasonPeriodManage && (
-                    <div className="p-3 border-t border-[#e3e2de] max-h-40 overflow-y-auto">
+                    <div className="p-3 max-h-40 overflow-y-auto border border-gray-panel">
                       {periodsLoading ? (
-                        <p className="text-xs text-[#787774]">불러오는 중...</p>
+                        <p className="text-xs text-gray-text">불러오는 중...</p>
                       ) : memberReasonPeriods.length === 0 ? (
-                        <p className="text-xs text-[#787774]">저장된 기간이 없습니다.</p>
+                        <p className="text-xs text-gray-text">저장된 기간이 없습니다.</p>
                       ) : (
                         <ul className="space-y-2">
                           {memberReasonPeriods.map((p) => (
-                            <li key={p.id} className="flex items-start justify-between gap-2 text-xs border-b border-[#e3e2de] pb-2 last:border-0 last:pb-0">
+                            <li key={p.id} className="flex items-center justify-between gap-2 text-xs border-b border-gray-border pb-2 last:border-0 last:pb-0">
                               <div>
-                                <span className="text-[#37352f]">{p.start_date} ~ {p.end_date}</span>
-                                <p className="text-[#787774] truncate mt-0.5">{p.default_reason}</p>
+                                <p className="text-gray-text truncate mt-0.5">{p.default_reason}</p>
+                                <span className="text-foreground">{p.start_date} ~ {p.end_date}</span>
                               </div>
                               <button
                                 type="button"
@@ -621,7 +632,7 @@ export default function CheckInPage() {
                                   const todayInRange = today >= p.start_date && today <= p.end_date;
                                   if (todayInRange) await loadTodayStatus();
                                 }}
-                                className="text-[#e03e3e] hover:underline shrink-0"
+                                className="text-danger shrink-0 cursor-pointer"
                               >
                                 삭제
                               </button>
@@ -635,8 +646,8 @@ export default function CheckInPage() {
               </div>
             )}
             {certifyMode === 'super' && (
-              <div className="mb-5 p-3 bg-[#f7f4eb] border border-[#e3e2de] rounded-md">
-                <p className="text-sm text-[#37352f]">
+              <div className="mt-4 p-3 bg-gray-panel rounded-md">
+                <p className="text-sm text-foreground">
                 &quot;<strong>면제권 사용</strong>&quot;을 손글씨로 작성하여 이미지를 올려주세요.
                 </p>
               </div>
@@ -646,7 +657,7 @@ export default function CheckInPage() {
             {/* 하단 버튼 영역 (고정) - 내용이 넘칠 때만 border-top */}
             <div
               className={`shrink-0 p-6 pt-0 bg-white rounded-b-lg ${
-                modalContentOverflows ? 'border-t border-[#E5E7EB] pl-4 pr-4 pb-4 pt-4' : ''
+                modalContentOverflows ? 'border-t border-gray-border-alt pl-4 pr-4 pb-4 pt-4' : ''
               }`}
             >
               <div className="flex gap-2">
@@ -664,7 +675,7 @@ export default function CheckInPage() {
                     setUsedSuperExemptionThisWeek(false);
                   }}
                   disabled={loading}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-[#0A0A0A] bg-white border border-[#e6e6e6] rounded-md hover:bg-[#f7f6f3] transition-colors"
+                  className="flex-1 px-4 py-2 text-sm font-medium text-text-primary bg-white border border-border-input rounded-md transition-colors cursor-pointer"
                 >
                   취소
                 </button>
@@ -679,8 +690,8 @@ export default function CheckInPage() {
                   }
                   className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                     ((certifyMode === 'image' || certifyMode === 'super') && selectedImage) || (certifyMode === 'reason' && reasonText.trim())
-                      ? !loading ? 'bg-[#2B7FFF] text-white' : 'bg-[#E5E7EB] text-[#364153] cursor-not-allowed'
-                      : 'bg-[#E5E7EB] text-[#364153] cursor-not-allowed'
+                      ? !loading ? 'bg-primary text-white cursor-pointer' : 'bg-gray-border-alt text-text-muted-dark cursor-not-allowed'
+                      : 'bg-gray-border-alt text-text-muted-dark cursor-not-allowed'
                   }`}
                 >
                   {uploading ? '업로드중...' : loading ? '처리중...' : certifyMode === 'super' ? '면제권 사용' : '인증하기'}
@@ -692,30 +703,30 @@ export default function CheckInPage() {
       )}
 
       {/* 헤더 (고정) - 블러(글래스) 효과 */}
-      <div className="border-b border-[#E5E7EB] sticky top-0 z-10 bg-white/70 backdrop-blur-md">
+      <div className="border-b border-gray-border-alt sticky top-0 z-10 bg-white/70 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">📖</span>
-            <h1 className="text-xl font-bold text-[#0A0A0A]">앙그뇌방</h1>
+            <h1 className="text-xl font-bold text-text-primary">앙그뇌방</h1>
           </div>
-          <p className="text-sm text-[#4A5565]">
+          <p className="text-sm text-text-muted">
             앙큼한 그녀들의 뇌가 섹시해지는 방법
           </p>
 
           {/* 오늘 날짜 & 진행률 */}
           <div className="flex items-center justify-between mt-4 mb-2">
-            <p className="text-sm text-[#0A0A0A]">
+            <p className="text-sm text-text-primary">
               {format(new Date(), 'M월 d일 EEEE', { locale: ko })}
             </p>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[#0A0A0A]">{checkedInCount}/{members.length}</span>
-              <span className="text-sm text-[#4A5565]">인증 완료</span>
+              <span className="text-sm font-semibold text-text-primary">{checkedInCount}/{members.length}</span>
+              <span className="text-sm text-text-muted">인증 완료</span>
             </div>
           </div>
 
-          <div className="bg-[#F3F4F6] rounded-full h-1.5 overflow-hidden">
+          <div className="bg-gray-bg rounded-full h-1.5 overflow-hidden">
             <div
-              className="h-full bg-[#2B7FFF] transition-all duration-500"
+              className="h-full bg-primary transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -724,8 +735,8 @@ export default function CheckInPage() {
 
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* 안내 문구 */}
-        <div className="mb-6 p-4 bg-[#F3F4F6] rounded-md border-l-4 border-[#2B7FFF]">
-          <p className="text-sm text-[#0A0A0A]">
+        <div className="mb-6 p-4 bg-gray-bg rounded-md border-l-4 border-primary">
+          <p className="text-sm text-text-primary">
             오늘 필사를 완료하셨나요? <span className="font-semibold">본인 이름을 눌러 인증하세요!</span>
           </p>
         </div>
@@ -744,16 +755,16 @@ export default function CheckInPage() {
                 className={`
                   relative p-4 rounded-lg text-center transition-all
                   ${isCheckedIn
-                    ? 'bg-[#F0FDF4] border-2 border-[#00C950] cursor-default'
-                    : 'bg-white border-2 border-[#E5E7EB] hover:bg-[#f7f6f3] cursor-pointer'
+                    ? 'bg-success-bg border-2 border-success cursor-default'
+                    : 'bg-white border-2 border-gray-border-alt cursor-pointer'
                   }
                 `}
               >
                 {isCheckedIn && (
-                  <div className="absolute top-1 right-1 text-[#0f7b4c] text-sm">✓</div>
+                  <div className="absolute top-1 right-1 text-success-dark text-sm">✓</div>
                 )}
                 {status?.imageUrl && (
-                  <div className="absolute top-1 left-1 text-[#2eaadc] text-sm">
+                  <div className="absolute top-1 left-1 text-accent text-sm">
                     {status.reason === SUPER_EXEMPTION_REASON ? '⭐' : '📷'}
                   </div>
                 )}
@@ -763,7 +774,7 @@ export default function CheckInPage() {
                   </div>
                 )}
                 <div className="text-3xl mb-1">{member.emoji}</div>
-                <div className={`text-sm font-medium ${isCheckedIn ? 'text-[#0A0A0A]' : 'text-[#0A0A0A]'}`}>
+                <div className={`text-sm font-medium ${isCheckedIn ? 'text-text-primary' : 'text-text-primary'}`}>
                   {member.name}
                 </div>
               </button>
@@ -774,15 +785,15 @@ export default function CheckInPage() {
         {/* 오늘의 현황 */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xm font-bold text-[#37352f]">
+            <h2 className="text-xm font-bold text-foreground">
               오늘의 현황
             </h2>
             <div className="flex gap-2">
-              <span className="py-0.5 text-[#00A63E] text-xs font-medium">
+              <span className="py-0.5 text-success text-xs font-medium">
                 {checkedInCount}명 완료
               </span>
               {members.length - checkedInCount > 0 && (
-                <span className="py-0.5 text-[#99A1AF] text-xs font-medium">
+                <span className="py-0.5 text-gray-icon text-xs font-medium">
                   {members.length - checkedInCount}명 대기
                 </span>
               )}
@@ -797,18 +808,18 @@ export default function CheckInPage() {
               return (
                 <div
                   key={member.id}
-                  className="flex items-center rounded-lg justify-between bg-[#F9FAFB] px-3 py-3"
+                  className="flex items-center rounded-lg justify-between bg-gray-panel px-3 py-3"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-xl">{member.emoji}</span>
-                    <span className={`text-sm ${isCheckedIn ? 'text-[#0A0A0A]' : 'text-[#0A0A0A]'}`}>
+                    <span className={`text-sm ${isCheckedIn ? 'text-text-primary' : 'text-text-primary'}`}>
                       {member.name}
                     </span>
                     {status?.reason === SUPER_EXEMPTION_REASON ? (
                       <button
                         type="button"
                         onClick={() => status.imageUrl && openImageModal(status.imageUrl)}
-                        className="text-xs text-[#8b6914] font-medium hover:underline"
+                        className="text-xs text-warning font-medium"
                       >
                         ⭐ 슈퍼 면제권
                       </button>
@@ -816,7 +827,7 @@ export default function CheckInPage() {
                       <button
                         type="button"
                         onClick={() => openImageModal(status.imageUrl!)}
-                        className="text-xs text-[#155DFC] font-medium hover:underline"
+                        className="text-xs text-primary-hover font-medium cursor-pointer"
                       >
                         📷 사진보기
                       </button>
@@ -827,7 +838,7 @@ export default function CheckInPage() {
                           setModalReasonText(status.reason!);
                           setShowReasonModal(true);
                         }}
-                        className="text-xs text-[#787774] font-medium hover:underline"
+                        className="text-xs text-gray-text font-medium"
                       >
                         ✏️ 사유보기
                       </button>
@@ -836,18 +847,18 @@ export default function CheckInPage() {
                   <div className="flex items-center gap-2">
                     {isCheckedIn ? (
                       <>
-                        <span className="px-3 py-2 border border-[#00A63E] bg-[#F0FDF4] text-[#00A63E] rounded-md text-xs font-medium">
+                        <span className="px-3 py-2 border border-success bg-success-bg text-success rounded-md text-xs font-medium">
                           완료
                         </span>
                         <button
                           onClick={() => handleUndo(member.name)}
-                          className="px-3 py-2 border border-[#E7000B] text-[#E7000B] bg-[#ffffff] rounded-md text-xs transition-colors"
+                          className="px-3 py-2 border border-danger-strong text-danger-strong bg-background rounded-md text-xs transition-colors cursor-pointer"
                         >
                           취소
                         </button>
                       </>
                     ) : (
-                      <span className="px-3 py-2 bg-[#ffffff] border border-[#c8c8c8] text-[#0A0A0A] opacity-50 rounded-md font-medium text-xs">
+                      <span className="px-3 py-2 bg-background border border-border-disabled text-text-primary opacity-50 rounded-md font-medium text-xs">
                         대기중
                       </span>
                     )}
@@ -859,30 +870,30 @@ export default function CheckInPage() {
         </div>
 
         {/* 필사모임 규칙 */}
-        <div className="border border-[#E5E7EB] rounded-md overflow-hidden mb-6">
+        <div className="border border-gray-border-alt rounded-md overflow-hidden mb-6">
           <button
             type="button"
             onClick={() => setShowRules(!showRules)}
-            className="w-full flex items-center justify-between px-4 py-4 bg-[#F9FAFB]"
+            className="w-full flex items-center justify-between px-4 py-4 bg-gray-panel cursor-pointer"
           >
-            <h2 className="text-sm font-semibold text-[#0A0A0A]">
+            <h2 className="text-sm font-semibold text-text-primary">
               필사모임 규칙
             </h2>
-            <span className="text-[#0A0A0A] text-sm">{showRules ? '▲' : '▼'}</span>
+            <span className="text-text-primary text-sm">{showRules ? '▲' : '▼'}</span>
           </button>
 
           {showRules && (
             <div className="px-4 py-4 space-y-4 text-sm">
               {/* 출석 */}
               <div>
-                <h3 className="font-semibold text-[#4A5565] mb-1">출석</h3>
-                <p className="text-[#4A5565] pl-3">• &lt;월-금&gt; 필사 후 사진찍고 카톡방에 인증</p>
+                <h3 className="font-semibold text-text-muted mb-1">출석</h3>
+                <p className="text-text-muted pl-3">• &lt;월-금&gt; 필사 후 사진찍고 카톡방에 인증</p>
               </div>
 
               {/* 벌금 규정 */}
               <div>
-                <h3 className="font-semibold text-[#4A5565] mb-1">벌금 규정</h3>
-                <div className="text-[#4A5565] pl-3 space-y-0.5">
+                <h3 className="font-semibold text-text-muted mb-1">벌금 규정</h3>
+                <div className="text-text-muted pl-3 space-y-0.5">
                   <p>• 미인증 1회당 1,000원 벌금 부과</p>
                   <p>• 벌금 통장 명의: 최초 벌금 발생자</p>
                 </div>
@@ -890,8 +901,8 @@ export default function CheckInPage() {
 
               {/* 벌금 감면 */}
               <div>
-                <h3 className="font-semibold text-[#4A5565] mb-1">벌금 감면</h3>
-                <div className="text-[#4A5565] pl-3 space-y-0.5">
+                <h3 className="font-semibold text-text-muted mb-1">벌금 감면</h3>
+                <div className="text-text-muted pl-3 space-y-0.5">
                   <p>• 다음의 경우 사전 공지 시 벌금 감면</p>
                   <p>• 여행, 질병, 업무 사유(야근 및 회식 포함) 등</p>
                 </div>
@@ -899,8 +910,8 @@ export default function CheckInPage() {
 
               {/* 면제권 */}
               <div>
-                <h3 className="font-semibold text-[#4A5565] mb-1">면제권</h3>
-                <div className="text-[#4A5565] pl-3 space-y-0.5">
+                <h3 className="font-semibold text-text-muted mb-1">면제권</h3>
+                <div className="text-text-muted pl-3 space-y-0.5">
                   <p>• 주 1회 슈퍼 면제권 사용가능</p>
                   <p>• 면제권 사용 방법: 당일 자정(24시) 이전까지 &quot;면제권 사용&quot;을 손글씨로 작성하여 카톡방에 인증</p>
                 </div>
@@ -910,18 +921,18 @@ export default function CheckInPage() {
         </div>
 
         {/* 명언 */}
-        <div className="mb-6 pl-4 bg-white border-l-4 border-[#D1D5DC] rounded-r-md">
-          <p className="text-sm font-semibold text-[#0A0A0A] mb-1">
+        <div className="mb-6 pl-4 bg-white border-l-4 border-gray-border-light rounded-r-md">
+          <p className="text-sm font-semibold text-text-primary mb-1">
             성공은 매일 반복한<br />작은 노력들의 합이다.
           </p>
-          <p className="text-xs text-[#6A7282]">- 로버트 콜리어</p>
+          <p className="text-xs text-gray-text-light">- 로버트 콜리어</p>
         </div>
 
         {/* 통계 링크 */}
-        <div className="text-center border-t border-[#e3e2de] pt-6">
+        <div className="text-center border-t border-gray-border pt-6">
           <a
             href="/stats"
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-[#155DFC] rounded-md"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary-hover rounded-md"
           >
             <span>이번 주 통계 보기</span>
             <span>→</span>
